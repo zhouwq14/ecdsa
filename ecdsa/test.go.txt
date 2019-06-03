@@ -1,0 +1,97 @@
+package main
+
+import (
+	"fmt"
+	"math/big"
+	"encoding/hex"
+	"ecdsa/fvss"
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/SSSaaS/sssa-golang"
+)
+
+func test_sssa () {
+	strings := []string{
+		"N17FigASkL6p1EOgJhRaIquQLGvYV0",
+		"0y10VAfmyH7GLQY6QccCSLKJi8iFgpcSBTLyYOGbiYPqOpStAf1OYuzEBzZR",
+		"KjRHO1nHmIDidf6fKvsiXWcTqNYo2U9U8juO94EHXVqgearRISTQe0zAjkeUYYBvtcB8VWzZHYm6ktMlhOXXCfRFhbJzBUsXaHb5UDQAvs2GKy6yq0mnp8gCj98ksDlUultqygybYyHvjqR7D7EAWIKPKUVz4of8OzSjZlYg7YtCUMYhwQDryESiYabFID1PKBfKn5WSGgJBIsDw5g2HB2AqC1r3K8GboDN616Swo6qjvSFbseeETCYDB3ikS7uiK67ErIULNqVjf7IKoOaooEhQACmZ5HdWpr34tstg18rO",
+	}
+
+	minimum := []int{4, 6, 20}
+	shares := []int{5, 100, 100}
+
+	for i := range strings {
+		created, _ := sssa.Create(minimum[i], shares[i], strings[i])
+		//fmt.Println(created)
+		//fmt.Println(" ")
+		combined, _ := sssa.Combine(created)
+		fmt.Println(combined)
+	}
+}
+
+func test_big () {
+	player0, _ := new(big.Int).SetString("1", 10)
+	player0.SetString("2", 10)
+	fmt.Println(player0)
+
+	var player [4]*big.Int
+	player[3], _ = big.NewInt(0).SetString("4", 10)
+
+	var prime *big.Int
+	prime, _ = big.NewInt(0).SetString("3", 10)
+	player[2] = big.NewInt(0).Set(prime)
+
+	for i, v := range player {
+		fmt.Printf("%d : ", i)
+		fmt.Println(v)
+	}
+}
+
+func test_sig () {
+	pkBytes, err := hex.DecodeString("22a47fa09a223f2aa079edf85a7c2d4f87" +
+		"20ee63e502ee2869afab7de234b80c")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("pkBytes:") //mytest
+	fmt.Println(pkBytes) //mytest
+
+	privKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), pkBytes)
+
+	fmt.Println("privKey:") //mytest
+	fmt.Println(privKey) //mytest
+	fmt.Println("pubKey:") //mytest
+	fmt.Println(pubKey) //mytest
+
+	message := "test message"
+	messageHash := chainhash.DoubleHashB([]byte(message))
+	signature, err := privKey.Sign(messageHash)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("messageHash:") //mytest
+	fmt.Println(messageHash) //mytest
+
+	fmt.Printf("Unserialized Signature: %x\n", signature)
+	fmt.Printf("Serialized Signature: %x\n", signature.Serialize())
+
+	verified := signature.Verify(messageHash, pubKey)
+	fmt.Printf("Signature Verified? %v\n", verified)
+}
+
+
+
+pkBytes:
+[34 164 127 160 154 34 63 42 160 121 237 248 90 124 45 79 135 32 238 99 229 2 238 40 105 175 171 125 226 52 184 12]
+privKey:
+&{{0x709c80 75287807344071775799969774983293054774613481199849999282301162903560939895541 91418675495144275881641652902945267759090883970403643943046695878775398457352} //私钥内包含公钥 15669280622064402590813018920111567599171487990495490501918129189672877078540} //私钥就是上面的Hex字符串的十进制值
+pubKey:
+&{0x709c80 75287807344071775799969774983293054774613481199849999282301162903560939895541 91418675495144275881641652902945267759090883970403643943046695878775398457352} //公钥内包含 curve，X，Y
+messageHash:
+[37 26 253 63 32 171 74 48 126 205 80 243 248 79 211 64 151 242 136 133 5 100 45 172 206 6 198 255 160 72 204 240]
+Serialized Signature: 304402201008e236fa8cd0f25df4482dddbb622e8a8b26ef0ba731719458de3ccd93805b022032f8ebe514ba5f672466eba334639282616bb3c2f0ab09998037513d1f9e3d6d
+Signature Verified? true
